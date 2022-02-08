@@ -39,33 +39,55 @@ def attribute_binning(
     print_impact=False,
 ):
     """
-    :param spark: Spark Session
-    :param idf: Input Dataframe
-    :param list_of_cols: List of numerical columns to transform e.g., ["col1","col2"].
-                         Alternatively, columns can be specified in a string format,
-                         where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
-                         "all" can be passed to include all numerical columns for analysis.
-                         Please note that this argument is used in conjunction with drop_cols i.e. a column mentioned in
-                         drop_cols argument is not considered for analysis even if it is mentioned in list_of_cols.
-    :param drop_cols: List of columns to be dropped e.g., ["col1","col2"].
-                      Alternatively, columns can be specified in a string format,
-                      where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
-    :param bin_method: "equal_frequency", "equal_range".
-                        In "equal_range" method, each bin is of equal size/width and in "equal_frequency", each bin has
-                        equal no. of rows, though the width of bins may vary.
-    :param bin_size: Number of bins.
-    :param bin_dtype: "numerical", "categorical".
-                      With "numerical" option, original value is replaced with an Integer (1,2,…) and
-                      with "categorical" option, original replaced with a string describing min and max value allowed
-                      in the bin ("minval-maxval").
-    :param pre_existing_model: Boolean argument – True or False. True if binning model exists already, False Otherwise.
-    :param model_path: If pre_existing_model is True, this argument is path for referring the pre-saved model.
-                       If pre_existing_model is False, this argument can be used for saving the model.
-                       Default "NA" means there is neither pre-existing model nor there is a need to save one.
-    :param output_mode: "replace", "append".
-                        “replace” option replaces original columns with transformed column. “append” option append transformed
-                        column to the input dataset with a postfix "_binned" e.g. column X is appended as X_binned.
-    :return: Binned Dataframe
+
+    Parameters
+    ----------
+    spark :
+        Spark Session
+    idf :
+        Input Dataframe
+    list_of_cols :
+        List of numerical columns to transform e.g., ["col1","col2"].
+        Alternatively, columns can be specified in a string format,
+        where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
+        "all" can be passed to include all numerical columns for analysis.
+        Please note that this argument is used in conjunction with drop_cols i.e. a column mentioned in
+        drop_cols argument is not considered for analysis even if it is mentioned in list_of_cols. (Default value = "all")
+    drop_cols :
+        List of columns to be dropped e.g., ["col1","col2"].
+        Alternatively, columns can be specified in a string format,
+        where different column names are separated by pipe delimiter “|” e.g., "col1|col2". (Default value = [])
+    bin_method :
+        equal_frequency", "equal_range".
+        In "equal_range" method, each bin is of equal size/width and in "equal_frequency", each bin has
+        equal no. of rows, though the width of bins may vary.
+    bin_size :
+        Number of bins. (Default value = 10)
+    bin_dtype :
+        numerical", "categorical".
+        With "numerical" option, original value is replaced with an Integer (1,2,…) and
+        with "categorical" option, original replaced with a string describing min and max value allowed
+        in the bin ("minval-maxval"). (Default value = "numerical")
+    pre_existing_model :
+        Boolean argument – True or False. True if binning model exists already, False Otherwise. (Default value = False)
+    model_path :
+        If pre_existing_model is True, this argument is path for referring the pre-saved model.
+        If pre_existing_model is False, this argument can be used for saving the model.
+        Default "NA" means there is neither pre-existing model nor there is a need to save one.
+    output_mode :
+        replace", "append".
+        “replace” option replaces original columns with transformed column. “append” option append transformed
+        column to the input dataset with a postfix "_binned" e.g. column X is appended as X_binned. (Default value = "replace")
+    method_type :
+         (Default value = "equal_range")
+    print_impact :
+         (Default value = False)
+
+    Returns
+    -------
+    type
+        Binned Dataframe
+
     """
 
     num_cols = attributeType_segregation(idf)[0]
@@ -143,6 +165,19 @@ def attribute_binning(
             df_model.write.parquet(model_path + "/attribute_binning", mode="overwrite")
 
     def bucket_label(value, index):
+        """
+
+        Parameters
+        ----------
+        value :
+            
+        index :
+            
+
+        Returns
+        -------
+
+        """
         if value is None:
             return None
         for j in range(0, len(bin_cutoffs[index])):
@@ -204,31 +239,49 @@ def monotonic_binning(
     output_mode="replace",
 ):
     """
-    :param spark: Spark Session
-    :param idf: Input Dataframe
-    :param list_of_cols: List of numerical columns to transform e.g., ["col1","col2"].
-                         Alternatively, columns can be specified in a string format,
-                         where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
-                         "all" can be passed to include all numerical columns for analysis.
-                         Please note that this argument is used in conjunction with drop_cols i.e. a column mentioned in
-                         drop_cols argument is not considered for analysis even if it is mentioned in list_of_cols.
-    :param drop_cols: List of columns to be dropped e.g., ["col1","col2"].
-                      Alternatively, columns can be specified in a string format,
-                      where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
-    :param label_col: Label/Target column
-    :param event_label: Value of (positive) event (i.e label 1)
-    :param bin_method: "equal_frequency", "equal_range".
-                        In "equal_range" method, each bin is of equal size/width and in "equal_frequency", each bin has
-                        equal no. of rows, though the width of bins may vary.
-    :param bin_size: Default number of bins in case monotonicity is not achieved.
-    :param bin_dtype: "numerical", "categorical".
-                      With "numerical" option, original value is replaced with an Integer (1,2,…) and
-                      with "categorical" option, original replaced with a string describing min and max value allowed
-                      in the bin ("minval-maxval").
-    :param output_mode: "replace", "append".
-                        “replace” option replaces original columns with transformed column. “append” option append transformed
-                        column to the input dataset with a postfix "_binned" e.g. column X is appended as X_binned.
-    :return: Binned Dataframe
+
+    Parameters
+    ----------
+    spark :
+        Spark Session
+    idf :
+        Input Dataframe
+    list_of_cols :
+        List of numerical columns to transform e.g., ["col1","col2"].
+        Alternatively, columns can be specified in a string format,
+        where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
+        "all" can be passed to include all numerical columns for analysis.
+        Please note that this argument is used in conjunction with drop_cols i.e. a column mentioned in
+        drop_cols argument is not considered for analysis even if it is mentioned in list_of_cols. (Default value = "all")
+    drop_cols :
+        List of columns to be dropped e.g., ["col1","col2"].
+        Alternatively, columns can be specified in a string format,
+        where different column names are separated by pipe delimiter “|” e.g., "col1|col2". (Default value = [])
+    label_col :
+        Label/Target column (Default value = "label")
+    event_label :
+        Value of (positive) event (i.e label 1) (Default value = 1)
+    bin_method :
+        equal_frequency", "equal_range".
+        In "equal_range" method, each bin is of equal size/width and in "equal_frequency", each bin has
+        equal no. of rows, though the width of bins may vary. (Default value = "equal_range")
+    bin_size :
+        Default number of bins in case monotonicity is not achieved.
+    bin_dtype :
+        numerical", "categorical".
+        With "numerical" option, original value is replaced with an Integer (1,2,…) and
+        with "categorical" option, original replaced with a string describing min and max value allowed
+        in the bin ("minval-maxval"). (Default value = "numerical")
+    output_mode :
+        replace", "append".
+        “replace” option replaces original columns with transformed column. “append” option append transformed
+        column to the input dataset with a postfix "_binned" e.g. column X is appended as X_binned. (Default value = "replace")
+
+    Returns
+    -------
+    type
+        Binned Dataframe
+
     """
     num_cols = attributeType_segregation(idf)[0]
     if list_of_cols == "all":
@@ -327,33 +380,53 @@ def cat_to_num_unsupervised(
     print_impact=False,
 ):
     """
-    :param spark: Spark Session
-    :param idf: Input Dataframe
-    :param list_of_cols: List of categorical columns to transform e.g., ["col1","col2"].
-                         Alternatively, columns can be specified in a string format,
-                         where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
-                         "all" can be passed to include all categorical columns for analysis.
-                         Please note that this argument is used in conjunction with drop_cols i.e. a column mentioned in
-                         drop_cols argument is not considered for analysis even if it is mentioned in list_of_cols.
-    :param drop_cols: List of columns to be dropped e.g., ["col1","col2"].
-                      Alternatively, columns can be specified in a string format,
-                      where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
-    :param method_type: 1 for Label Encoding or 0 for One hot encoding.
-                        In label encoding, each categorical value is assigned a unique integer based on alphabetical
-                        or frequency ordering (both ascending & descending options are available that can be selected by
-                        index_order argument).
-                        In one-hot encoding, every unique value in the column will be added in a form of dummy/binary column.
-    :param index_order: "frequencyDesc", "frequencyAsc", "alphabetDesc", "alphabetAsc".
-                        Valid only for Label Encoding method_type.
-    :param cardinality_threshold: Defines threshold to skip columns with higher cardinality values from encoding. Default value is 100.
-    :param pre_existing_model: Boolean argument – True or False. True if encoding model exists already, False Otherwise.
-    :param model_path: If pre_existing_model is True, this argument is path for referring the pre-saved model.
-                       If pre_existing_model is False, this argument can be used for saving the model.
-                       Default "NA" means there is neither pre existing model nor there is a need to save one.
-    :param output_mode: "replace", "append".
-                        “replace” option replaces original columns with transformed column. “append” option append transformed
-                        column to the input dataset with a postfix "_index" e.g. column X is appended as X_index.
-    :return: Encoded Dataframe
+
+    Parameters
+    ----------
+    spark :
+        Spark Session
+    idf :
+        Input Dataframe
+    list_of_cols :
+        List of categorical columns to transform e.g., ["col1","col2"].
+        Alternatively, columns can be specified in a string format,
+        where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
+        "all" can be passed to include all categorical columns for analysis.
+        Please note that this argument is used in conjunction with drop_cols i.e. a column mentioned in
+        drop_cols argument is not considered for analysis even if it is mentioned in list_of_cols. (Default value = "all")
+    drop_cols :
+        List of columns to be dropped e.g., ["col1","col2"].
+        Alternatively, columns can be specified in a string format,
+        where different column names are separated by pipe delimiter “|” e.g., "col1|col2". (Default value = [])
+    method_type :
+        1 for Label Encoding or 0 for One hot encoding.
+        In label encoding, each categorical value is assigned a unique integer based on alphabetical
+        or frequency ordering (both ascending & descending options are available that can be selected by
+        index_order argument).
+        In one-hot encoding, every unique value in the column will be added in a form of dummy/binary column. (Default value = 1)
+    index_order :
+        frequencyDesc", "frequencyAsc", "alphabetDesc", "alphabetAsc".
+        Valid only for Label Encoding method_type. (Default value = "frequencyDesc")
+    cardinality_threshold :
+        Defines threshold to skip columns with higher cardinality values from encoding. Default value is 100.
+    pre_existing_model :
+        Boolean argument – True or False. True if encoding model exists already, False Otherwise. (Default value = False)
+    model_path :
+        If pre_existing_model is True, this argument is path for referring the pre-saved model.
+        If pre_existing_model is False, this argument can be used for saving the model.
+        Default "NA" means there is neither pre existing model nor there is a need to save one.
+    output_mode :
+        replace", "append".
+        “replace” option replaces original columns with transformed column. “append” option append transformed
+        column to the input dataset with a postfix "_index" e.g. column X is appended as X_index. (Default value = "replace")
+    print_impact :
+         (Default value = False)
+
+    Returns
+    -------
+    type
+        Encoded Dataframe
+
     """
 
     cat_cols = attributeType_segregation(idf)[1]
@@ -425,6 +498,17 @@ def cat_to_num_unsupervised(
         odf = odf_encoded
 
         def vector_to_array(v):
+            """
+
+            Parameters
+            ----------
+            v :
+                
+
+            Returns
+            -------
+
+            """
             v = DenseVector(v)
             new_array = list([int(x) for x in v])
             return new_array
@@ -513,37 +597,57 @@ def imputation_MMM(
     print_impact=False,
 ):
     """
-    :param spark: Spark Session
-    :param idf: Input Dataframe
-    :param list_of_cols: List of columns to impute e.g., ["col1","col2"].
-                         Alternatively, columns can be specified in a string format,
-                         where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
-                         "all" can be passed to include all (non-array) columns for analysis.
-                         "missing" (default) can be passed to include only those columns with missing values.
-                         One of the usecases where "all" may be preferable over "missing" is when the user wants to save
-                         the imputation model for the future use e.g. a column may not have missing value in the training
-                         dataset but missing values may possibly appear in the prediction dataset.
-                         Please note that this argument is used in conjunction with drop_cols i.e. a column mentioned in
-                         drop_cols argument is not considered for analysis even if it is mentioned in list_of_cols.
-    :param drop_cols: List of columns to be dropped e.g., ["col1","col2"].
-                      Alternatively, columns can be specified in a string format,
-                      where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
-    :param method_type: "median", "mean" (valid only for for numerical columns attributes).
-                         Mode is only option for categorical columns.
-    :param pre_existing_model: Boolean argument – True or False. True if imputation model exists already, False otherwise.
-    :param model_path: If pre_existing_model is True, this argument is path for referring the pre-saved model.
-                       If pre_existing_model is False, this argument can be used for saving the model.
-                       Default "NA" means there is neither pre-existing model nor there is a need to save one.
-    :param output_mode: "replace", "append".
-                         “replace” option replaces original columns with transformed column. “append” option append transformed
-                         column to the input dataset with a postfix "_imputed" e.g. column X is appended as X_imputed.
-    :param stats_missing: Takes arguments for read_dataset (data_ingest module) function in a dictionary format
-                          to read pre-saved statistics on missing count/pct i.e. if measures_of_counts or
-                          missingCount_computation (data_analyzer.stats_generator module) has been computed & saved before.
-    :param stats_mode: Takes arguments for read_dataset (data_ingest module) function in a dictionary format
-                       to read pre-saved statistics on most frequently seen values i.e. if measures_of_centralTendency or
-                       mode_computation (data_analyzer.stats_generator module) has been computed & saved before.
-    :return: Imputed Dataframe
+
+    Parameters
+    ----------
+    spark :
+        Spark Session
+    idf :
+        Input Dataframe
+    list_of_cols :
+        List of columns to impute e.g., ["col1","col2"].
+        Alternatively, columns can be specified in a string format,
+        where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
+        "all" can be passed to include all (non-array) columns for analysis.
+        "missing" (default) can be passed to include only those columns with missing values.
+        One of the usecases where "all" may be preferable over "missing" is when the user wants to save
+        the imputation model for the future use e.g. a column may not have missing value in the training
+        dataset but missing values may possibly appear in the prediction dataset.
+        Please note that this argument is used in conjunction with drop_cols i.e. a column mentioned in
+        drop_cols argument is not considered for analysis even if it is mentioned in list_of_cols.
+    drop_cols :
+        List of columns to be dropped e.g., ["col1","col2"].
+        Alternatively, columns can be specified in a string format,
+        where different column names are separated by pipe delimiter “|” e.g., "col1|col2". (Default value = [])
+    method_type :
+        median", "mean" (valid only for for numerical columns attributes).
+        Mode is only option for categorical columns. (Default value = "median")
+    pre_existing_model :
+        Boolean argument – True or False. True if imputation model exists already, False otherwise. (Default value = False)
+    model_path :
+        If pre_existing_model is True, this argument is path for referring the pre-saved model.
+        If pre_existing_model is False, this argument can be used for saving the model.
+        Default "NA" means there is neither pre-existing model nor there is a need to save one.
+    output_mode :
+        replace", "append".
+        “replace” option replaces original columns with transformed column. “append” option append transformed
+        column to the input dataset with a postfix "_imputed" e.g. column X is appended as X_imputed. (Default value = "replace")
+    stats_missing :
+        Takes arguments for read_dataset (data_ingest module) function in a dictionary format
+        to read pre-saved statistics on missing count/pct i.e. if measures_of_counts or
+        missingCount_computation (data_analyzer.stats_generator module) has been computed & saved before. (Default value = {})
+    stats_mode :
+        Takes arguments for read_dataset (data_ingest module) function in a dictionary format
+        to read pre-saved statistics on most frequently seen values i.e. if measures_of_centralTendency or
+        mode_computation (data_analyzer.stats_generator module) has been computed & saved before. (Default value = {})
+    print_impact :
+         (Default value = False)
+
+    Returns
+    -------
+    type
+        Imputed Dataframe
+
     """
     if stats_missing == {}:
         missing_df = missingCount_computation(spark, idf)
@@ -790,31 +894,50 @@ def outlier_categories(
     print_impact=False,
 ):
     """
-    :param spark: Spark Session
-    :param idf: Input Dataframe
-    :param list_of_cols: List of categorical columns to transform e.g., ["col1","col2"].
-                         Alternatively, columns can be specified in a string format,
-                         where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
-                         "all" can be passed to include all categorical columns for analysis.
-                         Please note that this argument is used in conjunction with drop_cols i.e. a column mentioned in
-                         drop_cols argument is not considered for analysis even if it is mentioned in list_of_cols.
-    :param drop_cols: List of columns to be dropped e.g., ["col1","col2"].
-                      Alternatively, columns can be specified in a string format,
-                      where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
-    :param coverage: Defines the minimum % of rows that will be mapped to actual category name and the rest to be mapped
-                     to others and takes value between 0 to 1. Coverage of 0.8 can be interpreted as top frequently seen
-                     categories are considered till it covers minimum 80% of rows and rest lesser seen values are mapped to others.
-    :param max_category: Even if coverage is less, only (max_category - 1) categories will be mapped to actual name and rest to others.
-                         Caveat is when multiple categories have same rank, then #categories can be more than max_category.
-    :param pre_existing_model: Boolean argument – True or False. True if the model with the outlier/other values
-                               for each attribute exists already to be used, False Otherwise.
-    :param model_path: If pre_existing_model is True, this argument is path for the pre-saved model.
-                       If pre_existing_model is False, this field can be used for saving the model.
-                       Default "NA" means there is neither pre-existing model nor there is a need to save one.
-    :param output_mode: "replace", "append".
-                        “replace” option replaces original columns with transformed column. “append” option append transformed
-                        column to the input dataset with a postfix "_outliered" e.g. column X is appended as X_outliered.
-    :return: Dataframe after outlier treatment
+
+    Parameters
+    ----------
+    spark :
+        Spark Session
+    idf :
+        Input Dataframe
+    list_of_cols :
+        List of categorical columns to transform e.g., ["col1","col2"].
+        Alternatively, columns can be specified in a string format,
+        where different column names are separated by pipe delimiter “|” e.g., "col1|col2".
+        "all" can be passed to include all categorical columns for analysis.
+        Please note that this argument is used in conjunction with drop_cols i.e. a column mentioned in
+        drop_cols argument is not considered for analysis even if it is mentioned in list_of_cols. (Default value = "all")
+    drop_cols :
+        List of columns to be dropped e.g., ["col1","col2"].
+        Alternatively, columns can be specified in a string format,
+        where different column names are separated by pipe delimiter “|” e.g., "col1|col2". (Default value = [])
+    coverage :
+        Defines the minimum % of rows that will be mapped to actual category name and the rest to be mapped
+        to others and takes value between 0 to 1. Coverage of 0.8 can be interpreted as top frequently seen
+        categories are considered till it covers minimum 80% of rows and rest lesser seen values are mapped to others. (Default value = 1.0)
+    max_category :
+        Even if coverage is less, only (max_category - 1) categories will be mapped to actual name and rest to others.
+        Caveat is when multiple categories have same rank, then #categories can be more than max_category. (Default value = 50)
+    pre_existing_model :
+        Boolean argument – True or False. True if the model with the outlier/other values
+        for each attribute exists already to be used, False Otherwise. (Default value = False)
+    model_path :
+        If pre_existing_model is True, this argument is path for the pre-saved model.
+        If pre_existing_model is False, this field can be used for saving the model.
+        Default "NA" means there is neither pre-existing model nor there is a need to save one.
+    output_mode :
+        replace", "append".
+        “replace” option replaces original columns with transformed column. “append” option append transformed
+        column to the input dataset with a postfix "_outliered" e.g. column X is appended as X_outliered. (Default value = "replace")
+    print_impact :
+         (Default value = False)
+
+    Returns
+    -------
+    type
+        Dataframe after outlier treatment
+
     """
 
     cat_cols = attributeType_segregation(idf)[1]

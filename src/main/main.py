@@ -16,6 +16,17 @@ from anovos.shared.spark import *
 
 
 def ETL(args):
+    """
+
+    Parameters
+    ----------
+    args :
+        
+
+    Returns
+    -------
+
+    """
     f = getattr(data_ingest, "read_dataset")
     read_args = args.get("read_dataset", None)
     if read_args:
@@ -35,6 +46,23 @@ def ETL(args):
 
 
 def save(data, write_configs, folder_name, reread=False):
+    """
+
+    Parameters
+    ----------
+    data :
+        
+    write_configs :
+        
+    folder_name :
+        
+    reread :
+         (Default value = False)
+
+    Returns
+    -------
+
+    """
     if write_configs:
         if "file_path" not in write_configs:
             raise TypeError("file path missing for writing data")
@@ -53,6 +81,19 @@ def save(data, write_configs, folder_name, reread=False):
 
 
 def stats_args(all_configs, func):
+    """
+
+    Parameters
+    ----------
+    all_configs :
+        
+    func :
+        
+
+    Returns
+    -------
+
+    """
     stats_configs = all_configs.get("stats_generator", None)
     write_configs = all_configs.get("write_stats", None)
     report_inputPath = ""
@@ -110,6 +151,19 @@ def stats_args(all_configs, func):
 
 
 def main(all_configs, global_run_type):
+    """
+
+    Parameters
+    ----------
+    all_configs :
+        
+    global_run_type :
+        
+
+    Returns
+    -------
+
+    """
     start_main = timeit.default_timer()
     df = ETL(all_configs.get("input_dataset"))
 

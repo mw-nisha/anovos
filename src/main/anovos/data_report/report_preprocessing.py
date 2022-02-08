@@ -32,7 +32,7 @@ def master_to_local(master_path):
     Parameters
     ----------
     master_path :
-        
+
 
     Returns
     -------
@@ -357,7 +357,7 @@ def plot_comparative_drift(spark, idf, source, col, cutoffs_path):
     sourcecutoffs_path :
         Path containing the range cut offs details for the analysis column
     cutoffs_path :
-        
+
 
     Returns
     -------

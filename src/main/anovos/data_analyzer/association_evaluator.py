@@ -264,11 +264,11 @@ def IV_calculation(
         "monotonicity_check" 1 for monotonic binning else 0. monotonicity_check of 1 will
         dynamically calculate the bin_size ensuring monotonic nature but can be expensive operation.
     "bin_size": 10 :
-        
+
     "monotonicity_check": 0 :
-        
+
     } :
-        
+
     print_impact :
          (Default value = False)
 
@@ -399,11 +399,11 @@ def IG_calculation(
         "monotonicity_check" 1 for monotonic binning else 0. monotonicity_check of 1 will
         dynamically calculate the bin_size ensuring monotonic nature but can be expensive operation.
     "bin_size": 10 :
-        
+
     "monotonicity_check": 0 :
-        
+
     } :
-        
+
     print_impact :
          (Default value = False)
 

@@ -170,9 +170,9 @@ def attribute_binning(
         Parameters
         ----------
         value :
-            
+
         index :
-            
+
 
         Returns
         -------
@@ -503,7 +503,7 @@ def cat_to_num_unsupervised(
             Parameters
             ----------
             v :
-                
+
 
             Returns
             -------

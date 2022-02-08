@@ -67,7 +67,7 @@ def line_chart_gen_stability(df1, df2, col):
         Parameters
         ----------
         val :
-            
+
 
         Returns
         -------
@@ -436,13 +436,13 @@ def drift_stability_ind(
     Parameters
     ----------
     missing_recs_drift :
-        
+
     drift_tab :
-        
+
     missing_recs_stability :
-        
+
     stability_tab :
-        
+
 
     Returns
     -------

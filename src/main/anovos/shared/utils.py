@@ -127,9 +127,9 @@ def pairwise_reduce(op, x):
     Parameters
     ----------
     op :
-        
+
     x :
-        
+
 
     Returns
     -------

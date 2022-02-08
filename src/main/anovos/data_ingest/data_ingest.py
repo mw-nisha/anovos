@@ -118,7 +118,7 @@ def concatenate_dataset(*idfs, method_type="name"):
         First dataframe passed under idfs will define the final columns in the concatenated dataframe,
         and will throw error if any column in first dataframe is not available in any of other dataframes. (Default value = "name")
     *idfs :
-        
+
 
     Returns
     -------
@@ -152,7 +152,7 @@ def join_dataset(*idfs, join_cols, join_type):
     join_type :
         inner", “full”, “left”, “right”, “left_semi”, “left_anti”
     *idfs :
-        
+
 
     Returns
     -------

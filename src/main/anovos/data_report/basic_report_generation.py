@@ -46,9 +46,9 @@ def stats_args(path, func):
     Parameters
     ----------
     path :
-        
+
     func :
-        
+
 
     Returns
     -------
@@ -146,7 +146,7 @@ def anovos_basic_report(
         Parameters
         ----------
         output_path :
-            
+
 
         Returns
         -------
@@ -214,7 +214,7 @@ def anovos_basic_report(
         Parameters
         ----------
         col :
-            
+
 
         Returns
         -------

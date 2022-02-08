@@ -21,7 +21,7 @@ def ETL(args):
     Parameters
     ----------
     args :
-        
+
 
     Returns
     -------
@@ -51,11 +51,11 @@ def save(data, write_configs, folder_name, reread=False):
     Parameters
     ----------
     data :
-        
+
     write_configs :
-        
+
     folder_name :
-        
+
     reread :
          (Default value = False)
 
@@ -86,9 +86,9 @@ def stats_args(all_configs, func):
     Parameters
     ----------
     all_configs :
-        
+
     func :
-        
+
 
     Returns
     -------
@@ -156,9 +156,9 @@ def main(all_configs, global_run_type):
     Parameters
     ----------
     all_configs :
-        
+
     global_run_type :
-        
+
 
     Returns
     -------

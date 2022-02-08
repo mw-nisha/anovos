@@ -136,9 +136,9 @@ def drift_statistics(
         Parameters
         ----------
         p :
-            
+
         q :
-            
+
 
         Returns
         -------
@@ -153,9 +153,9 @@ def drift_statistics(
         Parameters
         ----------
         p :
-            
+
         q :
-            
+
 
         Returns
         -------
@@ -170,23 +170,24 @@ def drift_statistics(
         Parameters
         ----------
         p :
-            
+
         q :
-            
+
 
         Returns
         -------
 
         """
+
         def KL_divergence(p, q):
             """
 
             Parameters
             ----------
             p :
-                
+
             q :
-                
+
 
             Returns
             -------
@@ -207,9 +208,9 @@ def drift_statistics(
         Parameters
         ----------
         p :
-            
+
         q :
-            
+
 
         Returns
         -------
@@ -336,11 +337,11 @@ def stabilityIndex_computation(
     threshold :
         A column is flagged if the stability index is below the threshold, which varies between 0 to 4. (Default value = 1)
     *idfs :
-        
+
     "stddev": 0.3 :
-        
+
     "kurtosis": 0.2} :
-        
+
     print_impact :
          (Default value = False)
 
@@ -450,15 +451,15 @@ def stabilityIndex_computation(
         Parameters
         ----------
         cv :
-            
+
         thresholds :
              (Default value = [0.03)
         0.1 :
-            
+
         0.2 :
-            
+
         0.5] :
-            
+
 
         Returns
         -------

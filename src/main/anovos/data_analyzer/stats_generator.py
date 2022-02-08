@@ -749,7 +749,7 @@ def measures_of_shape(spark, idf, list_of_cols="all", drop_cols=[], print_impact
         Alternatively, columns can be specified in a string format,
         where different column names are separated by pipe delimiter “|” e.g., "col1|col2". (Default value = [])
     spark :
-        
+
     print_impact :
          (Default value = False)
 

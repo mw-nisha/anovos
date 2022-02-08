@@ -179,7 +179,7 @@ def nullRows_detection(
         Parameters
         ----------
         *cols :
-            
+
 
         Returns
         -------
@@ -510,19 +510,19 @@ def outlier_detection(
         to read pre-saved statistics on unique value count i.e. if measures_of_cardinality or
         uniqueCount_computation (data_analyzer.stats_generator module) has been computed & saved before. (Default value = {})
     "pctile_upper": 0.95 :
-        
+
     "stdev_lower": 3.0 :
-        
+
     "stdev_upper": 3.0 :
-        
+
     "IQR_lower": 1.5 :
-        
+
     "IQR_upper": 1.5 :
-        
+
     "min_validation": 2 :
-        
+
     } :
-        
+
     print_impact :
          (Default value = False)
 
@@ -704,7 +704,7 @@ def outlier_detection(
         Parameters
         ----------
         *v :
-            
+
 
         Returns
         -------
@@ -1228,7 +1228,7 @@ def invalidEntries_detection(
         Parameters
         ----------
         *v :
-            
+
 
         Returns
         -------

@@ -2,7 +2,9 @@ import copy
 import subprocess
 import sys
 import timeit
+
 import yaml
+
 from anovos.data_analyzer import association_evaluator
 from anovos.data_analyzer import quality_checker
 from anovos.data_analyzer import stats_generator
@@ -12,7 +14,7 @@ from anovos.data_report import report_preprocessing
 from anovos.data_report.basic_report_generation import anovos_basic_report
 from anovos.data_report.report_generation import anovos_report
 from anovos.data_report.report_preprocessing import save_stats
-from anovos.shared.spark import *
+from anovos.shared.spark import spark
 
 
 def ETL(args):
@@ -25,7 +27,7 @@ def ETL(args):
 
     for key, value in args.items():
         if key != "read_dataset":
-            if value != None:
+            if value is not None:
                 f = getattr(data_ingest, key)
                 if isinstance(value, dict):
                     df = f(df, **value)
@@ -52,18 +54,18 @@ def save(data, write_configs, folder_name, reread=False):
             return data
 
 
-def stats_args(all_configs, func):
-    stats_configs = all_configs.get("stats_generator", None)
-    write_configs = all_configs.get("write_stats", None)
-    report_inputPath = ""
-    report_configs = all_configs.get("report_preprocessing", None)
-    if report_configs != None:
+def stats_args(configs, func):
+    stats_configs = configs.get("stats_generator", None)
+    write_configs = configs.get("write_stats", None)
+    report_input_path = ""
+    report_configs = configs.get("report_preprocessing", None)
+    if report_configs is not None:
         if "master_path" not in report_configs:
             raise TypeError("Master path missing for saving report statistics")
         else:
-            report_inputPath = report_configs.get("master_path")
+            report_input_path = report_configs.get("master_path")
 
-    output = {}
+    result = {}
     if stats_configs:
         mainfunc_to_args = {
             "biasedness_detection": ["stats_mode"],
@@ -81,15 +83,7 @@ def stats_args(all_configs, func):
         }
 
         for arg in mainfunc_to_args.get(func, []):
-            if report_inputPath:
-                output[arg] = {
-                    "file_path": (
-                        report_inputPath + "/" + args_to_statsfunc[arg] + ".csv"
-                    ),
-                    "file_type": "csv",
-                    "file_configs": {"header": True, "inferSchema": True},
-                }
-            else:
+            if not report_input_path:
                 if write_configs:
                     read = copy.deepcopy(write_configs)
                     if "file_configs" in read:
@@ -104,12 +98,20 @@ def stats_args(all_configs, func):
                         + "/data_analyzer/stats_generator/"
                         + args_to_statsfunc[arg]
                     )
-                    output[arg] = read
+                    result[arg] = read
+            else:
+                result[arg] = {
+                    "file_path": (
+                        report_input_path + "/" + args_to_statsfunc[arg] + ".csv"
+                    ),
+                    "file_type": "csv",
+                    "file_configs": {"header": True, "inferSchema": True},
+                }
 
-    return output
+    return result
 
 
-def main(all_configs, local_or_emr):
+def main(all_configs, global_run_type):
     start_main = timeit.default_timer()
     df = ETL(all_configs.get("input_dataset"))
 
@@ -127,10 +129,10 @@ def main(all_configs, local_or_emr):
 
     for key, args in all_configs.items():
 
-        if (key == "concatenate_dataset") & (args != None):
+        if (key == "concatenate_dataset") & (args is not None):
             start = timeit.default_timer()
             idfs = [df]
-            for k in [e for e in args.keys() if e not in ("method")]:
+            for k in [e for e in args.keys() if e not in "method"]:
                 tmp = ETL(args.get(k))
                 idfs.append(tmp)
             df = data_ingest.concatenate_dataset(*idfs, method_type=args.get("method"))
@@ -144,7 +146,7 @@ def main(all_configs, local_or_emr):
             print(key, ", execution time (in secs) =", round(end - start, 4))
             continue
 
-        if (key == "join_dataset") & (args != None):
+        if (key == "join_dataset") & (args is not None):
             start = timeit.default_timer()
             idfs = [df]
             for k in [e for e in args.keys() if e not in ("join_type", "join_cols")]:
@@ -165,12 +167,15 @@ def main(all_configs, local_or_emr):
 
         if (
             (key == "anovos_basic_report")
-            & (args != None)
+            & (args is not None)
             & args.get("basic_report", False)
         ):
             start = timeit.default_timer()
             anovos_basic_report(
-                spark, df, **args.get("report_args", {}), local_or_emr=local_or_emr
+                spark,
+                df,
+                **args.get("report_args", {}),
+                global_run_type=global_run_type
             )
             end = timeit.default_timer()
             print("Basic Report, execution time (in secs) =", round(end - start, 4))
@@ -190,7 +195,7 @@ def main(all_configs, local_or_emr):
                             report_inputPath,
                             m,
                             reread=True,
-                            run_type=local_or_emr,
+                            run_type=global_run_type,
                         ).show(100)
                     else:
                         save(
@@ -203,9 +208,9 @@ def main(all_configs, local_or_emr):
                     end = timeit.default_timer()
                     print(key, m, ", execution time (in secs) =", round(end - start, 4))
 
-            if (key == "quality_checker") & (args != None):
+            if (key == "quality_checker") & (args is not None):
                 for subkey, value in args.items():
-                    if value != None:
+                    if value is not None:
                         start = timeit.default_timer()
                         print("\n" + subkey + ": \n")
                         f = getattr(quality_checker, subkey)
@@ -228,7 +233,7 @@ def main(all_configs, local_or_emr):
                                 report_inputPath,
                                 subkey,
                                 reread=True,
-                                run_type=local_or_emr,
+                                run_type=global_run_type,
                             ).show(100)
                         else:
                             save(
@@ -245,9 +250,9 @@ def main(all_configs, local_or_emr):
                             round(end - start, 4),
                         )
 
-            if (key == "association_evaluator") & (args != None):
+            if (key == "association_evaluator") & (args is not None):
                 for subkey, value in args.items():
-                    if value != None:
+                    if value is not None:
                         start = timeit.default_timer()
                         print("\n" + subkey + ": \n")
                         f = getattr(association_evaluator, subkey)
@@ -262,7 +267,7 @@ def main(all_configs, local_or_emr):
                                 report_inputPath,
                                 subkey,
                                 reread=True,
-                                run_type=local_or_emr,
+                                run_type=global_run_type,
                             ).show(100)
                         else:
                             save(
@@ -280,10 +285,10 @@ def main(all_configs, local_or_emr):
                             round(end - start, 4),
                         )
 
-            if (key == "drift_detector") & (args != None):
+            if (key == "drift_detector") & (args is not None):
                 for subkey, value in args.items():
 
-                    if (subkey == "drift_statistics") & (value != None):
+                    if (subkey == "drift_statistics") & (value is not None):
                         start = timeit.default_timer()
                         if not value["configs"]["pre_existing_source"]:
                             source = ETL(value.get("source_dataset"))
@@ -299,7 +304,7 @@ def main(all_configs, local_or_emr):
                                 report_inputPath,
                                 subkey,
                                 reread=True,
-                                run_type=local_or_emr,
+                                run_type=global_run_type,
                             ).show(100)
                         else:
                             save(
@@ -316,10 +321,10 @@ def main(all_configs, local_or_emr):
                             round(end - start, 4),
                         )
 
-                    if (subkey == "stabilityIndex_computation") & (value != None):
+                    if (subkey == "stabilityIndex_computation") & (value is not None):
                         start = timeit.default_timer()
                         idfs = []
-                        for k in [e for e in value.keys() if e not in ("configs")]:
+                        for k in [e for e in value.keys() if e not in "configs"]:
                             tmp = ETL(value.get(k))
                             idfs.append(tmp)
                         df_stats = drift_detector.stabilityIndex_computation(
@@ -332,7 +337,7 @@ def main(all_configs, local_or_emr):
                                 report_inputPath,
                                 subkey,
                                 reread=True,
-                                run_type=local_or_emr,
+                                run_type=global_run_type,
                             ).show(100)
                             appended_metric_path = value["configs"].get(
                                 "appended_metric_path", ""
@@ -350,7 +355,7 @@ def main(all_configs, local_or_emr):
                                     report_inputPath,
                                     "stabilityIndex_metrics",
                                     reread=True,
-                                    run_type=local_or_emr,
+                                    run_type=global_run_type,
                                 ).show(100)
                         else:
                             save(
@@ -371,9 +376,9 @@ def main(all_configs, local_or_emr):
                     "execution time w/o report (in sec) =", round(end - start_main, 4)
                 )
 
-            if (key == "report_preprocessing") & (args != None):
+            if (key == "report_preprocessing") & (args is not None):
                 for subkey, value in args.items():
-                    if (subkey == "charts_to_objects") & (value != None):
+                    if (subkey == "charts_to_objects") & (value is not None):
                         start = timeit.default_timer()
                         f = getattr(report_preprocessing, subkey)
                         extra_args = stats_args(all_configs, subkey)
@@ -383,7 +388,7 @@ def main(all_configs, local_or_emr):
                             **value,
                             **extra_args,
                             master_path=report_inputPath,
-                            run_type=local_or_emr
+                            run_type=global_run_type
                         )
                         end = timeit.default_timer()
                         print(
@@ -393,22 +398,24 @@ def main(all_configs, local_or_emr):
                             round(end - start, 4),
                         )
 
-            if (key == "report_generation") & (args != None):
-                anovos_report(**args, run_type=local_or_emr)
+            if (key == "report_generation") & (args is not None):
+                anovos_report(**args, run_type=global_run_type)
 
     save(df, write_main, folder_name="final_dataset", reread=False)
 
 
 if __name__ == "__main__":
     config_path = sys.argv[1]
-    local_or_emr = sys.argv[2]
+    global_run_type = sys.argv[2]
 
-    if local_or_emr == "local":
+    if global_run_type == "local" or "databricks":
         config_file = open(config_path, "r")
-    else:
+    elif global_run_type == "emr":
         bash_cmd = "aws s3 cp " + config_path + " config.yaml"
         output = subprocess.check_output(["bash", "-c", bash_cmd])
         config_file = open("config.yaml", "r")
+    else:
+        raise ValueError("Invalid global_run_type")
 
     all_configs = yaml.load(config_file, yaml.SafeLoader)
-    main(all_configs, local_or_emr)
+    main(all_configs, global_run_type)

@@ -4,6 +4,7 @@ from pathlib import Path
 import datapane as dp
 import pandas as pd
 import plotly.express as px
+
 from anovos.data_analyzer.association_evaluator import (
     correlation_matrix,
     variable_clustering,
@@ -35,9 +36,17 @@ global_theme_r = px.colors.sequential.Plasma_r
 global_plot_bg_color = "rgba(0,0,0,0)"
 global_paper_bg_color = "rgba(0,0,0,0)"
 
-default_template = dp.HTML(
-    '<html><img src="https://mobilewalla-anovos.s3.amazonaws.com/anovos.png" style="height:100px;display:flex;margin:auto;float:right"></img></html>'
-), dp.Text("# ML-Anovos Report")
+default_template = (
+    dp.HTML(
+        """
+        <html>
+            <img src="https://mobilewalla-anovos.s3.amazonaws.com/anovos.png" 
+                 style="height:100px;display:flex;margin:auto;float:right"/>
+        </html>
+        """
+    ),
+    dp.Text("# ML-Anovos Report"),
+)
 
 
 def stats_args(path, func):
@@ -73,7 +82,7 @@ def anovos_basic_report(
     label_col="",
     event_label="",
     output_path=".",
-    local_or_emr="local",
+    global_run_type="local",
     print_impact=True,
 ):
     """
@@ -83,8 +92,10 @@ def anovos_basic_report(
     :param label_col: Label/Target column
     :param event_label: Value of (positive) event (i.e label 1)
     :param output_path: File Path for saving metrics and basic report
-    :param local_or_emr: "local" (default), "emr"
+    :param global_run_type: "local" (default), "emr", "databricks"
                          "emr" if the files are read from or written in AWS s3
+                         "databricks" if the files are read from or written in dbfs in azure databricks
+    : param print_impact: True, False.
     """
     global num_cols
     global cat_cols
@@ -110,10 +121,23 @@ def anovos_basic_report(
     AT_funcs = [IV_calculation, IG_calculation]
     all_funcs = SG_funcs + QC_rows_funcs + QC_cols_funcs + AA_funcs + AT_funcs
 
-    if local_or_emr == "local":
+    def output_to_local(output_path):
+        punctuations = ":"
+        for x in output_path:
+            if x in punctuations:
+                local_path = output_path.replace(x, "")
+                local_path = "/" + local_path
+        return local_path
+
+    if global_run_type == "local":
         local_path = output_path
-    else:
+    elif global_run_type == "databricks":
+        local_path = output_to_local(output_path)
+    elif global_run_type == "emr":
         local_path = "report_stats"
+    else:
+        raise ValueError("Invalid global_run_type")
+
     Path(local_path).mkdir(parents=True, exist_ok=True)
 
     for func in all_funcs:
@@ -135,7 +159,7 @@ def anovos_basic_report(
             ends_with(local_path) + func.__name__ + ".csv", index=False
         )
 
-        if local_or_emr == "emr":
+        if global_run_type == "emr":
             bash_cmd = (
                 "aws s3 cp "
                 + ends_with(local_path)
@@ -143,7 +167,7 @@ def anovos_basic_report(
                 + ".csv "
                 + ends_with(output_path)
             )
-            output = subprocess.check_output(["bash", "-c", bash_cmd])
+            subprocess.check_output(["bash", "-c", bash_cmd])
 
         if print_impact:
             print(func.__name__, ":\n")
@@ -287,6 +311,7 @@ def anovos_basic_report(
                 )
                 + "**"
             )
+
             duplicate_rows_count = (
                 " No. of Duplicate Rows: **"
                 + str(
@@ -297,6 +322,7 @@ def anovos_basic_report(
                 )
                 + "**"
             )
+
             duplicate_rows_pct = (
                 " Percentage of Duplicate Rows: **"
                 + str(
@@ -307,6 +333,7 @@ def anovos_basic_report(
                 + " %"
                 + "**"
             )
+
             QCrow_content.append(
                 [
                     dp.Text("### " + str(remove_u_score(i.__name__))),
@@ -441,10 +468,14 @@ def anovos_basic_report(
                     )
                 )
 
+    # @TODO: is there better templating approach such as jinja
     tab3 = dp.Group(
         dp.Text("# "),
         dp.Text(
-            "*This section analyzes the interaction between different attributes and/or the relationship between an attribute & the binary target variable.*"
+            """
+            *This section analyzes the interaction between different attributes and/or the relationship 
+            between an attribute & the binary target variable.*
+            """
         ),
         dp.Text("# "),
         dp.Text("# "),
@@ -457,17 +488,17 @@ def anovos_basic_report(
         label="Attribute Associations",
     )
 
-    basic_report = dp.Report(
+    dp.Report(
         default_template[0],
         default_template[1],
         dp.Select(blocks=[tab1, tab2, tab3], type=dp.SelectType.TABS),
     ).save(ends_with(local_path) + "basic_report.html", open=True)
 
-    if local_or_emr == "emr":
+    if global_run_type == "emr":
         bash_cmd = (
             "aws s3 cp "
             + ends_with(local_path)
             + "basic_report.html "
             + ends_with(output_path)
         )
-        output = subprocess.check_output(["bash", "-c", bash_cmd])
+        subprocess.check_output(["bash", "-c", bash_cmd])

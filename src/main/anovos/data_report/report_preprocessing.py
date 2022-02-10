@@ -6,6 +6,11 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import pyspark
+from loguru import logger
+from pyspark.sql import functions as F
+from pyspark.sql import types as T
+from pyspark.sql.window import Window
+
 from anovos.data_analyzer.stats_generator import uniqueCount_computation
 from anovos.data_ingest.data_ingest import read_dataset
 from anovos.data_transformer.transformers import (
@@ -14,9 +19,6 @@ from anovos.data_transformer.transformers import (
     attribute_binning,
 )
 from anovos.shared.utils import attributeType_segregation, ends_with
-from pyspark.sql import functions as F
-from pyspark.sql import types as T
-from pyspark.sql.window import Window
 
 global_theme = px.colors.sequential.Plasma
 global_theme_r = px.colors.sequential.Plasma_r
@@ -26,6 +28,15 @@ num_cols = []
 cat_cols = []
 
 
+def master_to_local(master_path):
+    punctuations = ":"
+    for x in master_path:
+        if x in punctuations:
+            local_path = master_path.replace(x, "")
+            local_path = "/" + local_path
+    return local_path
+
+
 def save_stats(spark, idf, master_path, function_name, reread=False, run_type="local"):
     """
     :param spark: Spark Session
@@ -33,14 +44,18 @@ def save_stats(spark, idf, master_path, function_name, reread=False, run_type="l
     :param master_path: Path to master folder under which all statistics will be saved in a csv file format.
     :param function_name: Function Name for which statistics need to be saved. file name will be saved as csv
     :return: None, dataframe saved
-    :run_type: local or emr based on the mode of execution. Default value is kept as local
+    :run_type: local or emr or databricks based on the mode of execution. Default value is kept as local
     :reread: option to reread. Default value is kept as False
     """
-
     if run_type == "local":
         local_path = master_path
-    else:
+    elif run_type == "databricks":
+        local_path = master_to_local(master_path)
+    elif run_type == "emr":
         local_path = "report_stats"
+    else:
+        raise ValueError("Invalid run_type")
+
     Path(local_path).mkdir(parents=True, exist_ok=True)
 
     idf.toPandas().to_csv(ends_with(local_path) + function_name + ".csv", index=False)
@@ -53,7 +68,8 @@ def save_stats(spark, idf, master_path, function_name, reread=False, run_type="l
             + ".csv "
             + ends_with(master_path)
         )
-        output = subprocess.check_output(["bash", "-c", bash_cmd])
+
+        subprocess.check_output(["bash", "-c", bash_cmd])
 
     if reread:
         odf = spark.read.csv(
@@ -66,7 +82,8 @@ def save_stats(spark, idf, master_path, function_name, reread=False, run_type="l
 
 def edit_binRange(col):
     """
-    :param col: The column which is passed as input and needs to be treated. The generated output will not contain any range whose value at either side is the same.
+    :param col: The column which is passed as input and needs to be treated. T
+    he generated output will not contain any range whose value at either side is the same.
     """
     try:
         list_col = col.split("-")
@@ -75,7 +92,8 @@ def edit_binRange(col):
             return deduped_col[0]
         else:
             return col
-    except:
+    except Exception as e:
+        logger.error(f"processing failed during edit_binRange, error {e}")
         pass
 
 
@@ -118,7 +136,8 @@ def binRange_to_binIdx(spark, col, cutoffs_path):
 def plot_frequency(spark, idf, col, cutoffs_path):
     """
     :param spark: Spark Session
-    :param idf: Input dataframe which would be referred for producing the frequency charts in form of bar plots / histograms
+    :param idf: Input dataframe which would be referred for producing the frequency charts in form of
+                bar plots / histograms
     :param col: Analysis column
     :param cutoffs_path: Path containing the range cut offs details for the analysis column
     """
@@ -256,7 +275,6 @@ def plot_comparative_drift(spark, idf, source, col, cutoffs_path):
     :param col: Analysis column
     :param sourcecutoffs_path: Path containing the range cut offs details for the analysis column
     """
-
     odf = (
         idf.groupBy(col)
         .agg((F.count(col) / idf.count()).alias("countpct_target"))
@@ -365,7 +383,7 @@ def charts_to_objects(
     :param drift_detector: True or False as per the availability. Default value is kept as False
     :param source_path: Source data path. Default value is kept as "NA"
     :param master_path: Path where the output needs to be saved, ideally the same path where the analyzed data output is also saved
-    :param run_type: local or emr run type. Default value is kept as local
+    :param run_type: local or emr or databricks run type. Default value is kept as local
     """
 
     global num_cols
@@ -461,8 +479,13 @@ def charts_to_objects(
 
     if run_type == "local":
         local_path = master_path
-    else:
+    elif run_type == "databricks":
+        local_path = master_to_local(master_path)
+    elif run_type == "emr":
         local_path = "report_stats"
+    else:
+        raise ValueError("Invalid run_type")
+
     Path(local_path).mkdir(parents=True, exist_ok=True)
 
     for idx, col in enumerate(list_of_cols):
@@ -495,7 +518,8 @@ def charts_to_objects(
                         spark, idf_encoded, idf_source, col, cutoffs_path
                     )
                     f.write_json(ends_with(local_path) + "drift_" + col)
-                except:
+                except Exception as e:
+                    logger.error(f"processing failed during drift detection, error {e}")
                     pass
 
         if col in num_cols:
@@ -537,7 +561,8 @@ def charts_to_objects(
                         cutoffs_path,
                     )
                     f.write_json(ends_with(local_path) + "drift_" + col)
-                except:
+                except Exception as e:
+                    logger.error(f"processing failed during drift detection, error {e}")
                     pass
 
     pd.DataFrame(idf.dtypes, columns=["attribute", "data_type"]).to_csv(
@@ -551,4 +576,5 @@ def charts_to_objects(
             + " "
             + ends_with(master_path)
         )
-        output = subprocess.check_output(["bash", "-c", bash_cmd])
+
+        subprocess.check_output(["bash", "-c", bash_cmd])
